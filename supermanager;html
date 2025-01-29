@@ -1,0 +1,418 @@
+><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title >super rdv manager </title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    :root {
+        --primary: #6c5ce7;
+        --secondary: #a55eea;
+        --accent: #fd79a8;
+        --success: #00b894;
+        --background: #f8f9ff;
+    }
+
+    body {
+        background: var(--background);
+        color: #333;
+        min-height: 100vh;
+        background-image: linear-gradient(45deg, #f1f2ff 25%, transparent 25%), 
+                          linear-gradient(-45deg, #f1f2ff 25%, transparent 25%),
+                          linear-gradient(45deg, transparent 75%, #f1f2ff 75%),
+                          linear-gradient(-45deg, transparent 75%, #f1f2ff 75%);
+        background-size: 20px 20px;
+        animation: backgroundMove 30s linear infinite;
+    }
+
+    @keyframes backgroundMove {
+        0% {
+            background-position: 0 0, 0 0, 0 0, 0 0;
+        }
+        100% {
+            background-position: 40px 40px, 40px 40px, 40px 40px, 40px 40px;
+        }
+    }
+
+    .app-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    header {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        padding: 20px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 4px 20px rgba(108, 92, 231, 0.2);
+        border-radius: 0 0 20px 20px;
+        text-align: center;
+    }
+
+    header h1 {
+        font-size: 2em;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        animation: rainbow 5s linear infinite;
+    }
+
+    @keyframes rainbow {
+        0% { filter: hue-rotate(0deg); }
+        100% { filter: hue-rotate(360deg); }
+    }
+
+    .form-container {
+        background: white;
+        padding: 25px;
+        border-radius: 20px;
+        margin: 20px 0;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transform: translateY(0);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .form-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    }
+
+    .input-group {
+        margin-bottom: 20px;
+        position: relative;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--primary);
+        font-weight: 600;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #eee;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: all 0.3s;
+        background: #f8f9ff;
+    }
+
+    input:focus, select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
+        transform: scale(1.01);
+    }
+
+    button {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 12px;
+        font-size: 16px;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.3s;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    button:hover {
+        background: var(--secondary);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+    }
+
+    button:active {
+        transform: translateY(0);
+    }
+
+    button::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 5px;
+        height: 5px;
+        background: rgba(255, 255, 255, .5);
+        opacity: 0;
+        border-radius: 100%;
+        transform: scale(1, 1) translate(-50%);
+        transform-origin: 50% 50%;
+    }
+
+    button:focus:not(:active)::after {
+        animation: ripple 1s ease-out;
+    }
+
+    @keyframes ripple {
+        0% {
+            transform: scale(0, 0);
+            opacity: 0.5;
+        }
+        100% {
+            transform: scale(100, 100);
+            opacity: 0;
+        }
+    }
+
+    .appointments-list {
+        margin-top: 20px;
+    }
+
+    .appointment-card {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transform: translateX(0);
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .appointment-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        background: var(--primary);
+        border-radius: 5px 0 0 5px;
+    }
+
+    .appointment-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+
+    .appointment-info {
+        flex: 1;
+    }
+
+    .appointment-title {
+        font-weight: 600;
+        color: var(--primary);
+        margin-bottom: 5px;
+        font-size: 1.1em;
+    }
+
+    .appointment-time {
+        color: #666;
+        font-size: 0.9em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .delete-btn {
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-left: 10px;
+        width: auto;
+        font-size: 0.9em;
+    }
+
+    .delete-btn:hover {
+        background: #e84393;
+    }
+
+    .alarm-badge {
+        background: #ffeaa7;
+        color: #fdcb6e;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        margin-left: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .alarm-badge::before {
+        content: '⏰';
+    }
+
+    /* Animations pour l'ajout et la suppression */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .appointment-card {
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @media (max-width: 480px) {
+        .app-container {
+            padding: 10px;
+        }
+
+        .form-container {
+            padding: 15px;
+        }
+
+        .appointment-card {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .delete-btn {
+            width: 100%;
+            margin-left: 0;
+        }
+    }
+</style>
+</head>
+<body>
+    <header>
+        <h1>✨ Super RDV Manager ✨</h1>
+    </header>
+
+    <div class="app-container">
+        <div class="form-container">
+            <form id="appointmentForm">
+                <div class="input-group">
+                    <label for="title">📝 Titre du rendez-vous</label>
+                    <input type="text" id="title" required placeholder="Ex: Rendez-vous médecin">
+                </div>
+
+                <div class="input-group">
+                    <label for="date">📅 Date</label>
+                    <input type="date" id="date" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="time">⏰ Heure</label>
+                    <input type="time" id="time" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="alarm">🔔 Rappel</label>
+                    <select id="alarm" required>
+                        <option value="5">5 minutes avant</option>
+                        <option value="15">15 minutes avant</option>
+                        <option value="30">30 minutes avant</option>
+                        <option value="60">1 heure avant</option>
+                    </select>
+                </div>
+
+                <button type="submit">✨ Ajouter le rendez-vous ✨</button>
+            </form>
+        </div>
+
+        <div class="appointments-list" id="appointmentsList"></div>
+    </div>
+
+    <script>
+        function confetti() {
+            const colors = ['#6c5ce7', '#a55eea', '#fd79a8', '#00b894'];
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.cssText = `
+                    position: fixed;
+                    width: 10px;
+                    height: 10px;
+                    background: ${colors[Math.floor(Math.random() * colors.length)]};
+                    top: -10px;
+                    left: ${Math.random() * 100}vw;
+                    opacity: 0;
+                    transform: translateY(0);
+                    animation: confetti 1s ease-out forwards;
+                `;
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 1000);
+            }
+        }
+
+        document.getElementById('appointmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('title').value;
+            const date = document.getElementById('date').value;
+            const time = document.getElementById('time').value;
+            const alarm = document.getElementById('alarm').value;
+
+            const appointmentDateTime = new Date(`${date}T${time}`);
+            const alarmDateTime = new Date(appointmentDateTime.getTime() - alarm * 60000);
+
+            const appointmentCard = document.createElement('div');
+            appointmentCard.className = 'appointment-card';
+            
+            const formattedDate = new Date(date).toLocaleDateString('fr-FR', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long'
+            });
+
+            appointmentCard.innerHTML = `
+                <div class="appointment-info">
+                    <div class="appointment-title">📌 ${title}</div>
+                    <div class="appointment-time">
+                        📅 ${formattedDate} à ${time}
+                        <span class="alarm-badge">Rappel ${alarm} min avant</span>
+                    </div>
+                </div>
+                <button class="delete-btn" onclick="this.parentElement.remove()">🗑️ Supprimer</button>
+            `;
+
+            document.getElementById('appointmentsList').appendChild(appointmentCard);
+
+            const timeUntilAlarm = alarmDateTime.getTime() - new Date().getTime();
+            if (timeUntilAlarm > 0) {
+                setTimeout(() => {
+                    if (Notification.permission === "granted") {
+                        new Notification(`🔔 Rappel: ${title}`, {
+                            body: `Votre rendez-vous commence dans ${alarm} minutes`
+                        });
+                    } else if (Notification.permission !== "denied") {
+                        Notification.requestPermission().then(permission => {
+                            if (permission === "granted") {
+                                new Notification(`🔔 Rappel: ${title}`, {
+                                    body: `Votre rendez-vous commence dans ${alarm} minutes`
+                                });
+                            }
+                        });
+                    }
+                    alert(`🔔 Rappel: ${title} commence dans ${alarm} minutes!`);
+                }, timeUntilAlarm);
+            }
+
+            confetti();
+            this.reset();
+        });
+
+        if ("Notification" in window) {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,804 @@
+<html><head><base href="." />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<style>
+  body { margin: 0; background: #000; color: #fff; }
+  canvas { display: block; }
+  .controls {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    padding: 20px;
+    background: rgba(0,0,0,0.8);
+    border-radius: 10px;
+    font-family: 'Arial', sans-serif;
+    min-width: 300px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .torus-section {
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+  }
+  .torus-section h3 {
+    margin: 0 0 15px 0;
+    color: #ff5555;
+    font-size: 1.1em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    user-select: none;
+  }
+  .torus-section h3::after {
+    content: '▼';
+    margin-left: auto;
+    font-size: 0.8em;
+    transition: transform 0.3s;
+  }
+  .torus-section.collapsed h3::after {
+    transform: rotate(-90deg);
+  }
+  .torus-section .section-content {
+    max-height: 1000px;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
+  .torus-section.collapsed .section-content {
+    max-height: 0;
+  }
+  .control-group {
+    margin-bottom: 12px;
+  }
+  label {
+    display: block;
+    margin-bottom: 5px;
+    color: #aaa;
+    font-size: 0.9em;
+  }
+  input[type="range"] {
+    width: 100%;
+    margin: 5px 0;
+  }
+  input[type="checkbox"] {
+    margin-right: 8px;
+  }
+  .keyboard-controls {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 5px;
+    font-size: 0.8em;
+  }
+  .theme-select {
+    width: 100%;
+    padding: 8px;
+    background: rgba(0,0,0,0.3);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  .theme-select optgroup {
+    background: rgba(0,0,0,0.9);
+  }
+  .theme-select option {
+    background: rgba(0,0,0,0.7);
+    padding: 4px;
+  }
+  @media (max-width: 768px) {
+    .controls {
+      max-height: 100vh;
+      overflow-y: auto;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="controls">
+  <div class="torus-section">
+    <h3>Primary Torus</h3>
+    <div class="section-content">
+      <div class="control-group">
+        <label><input type="checkbox" id="primaryTorus" checked> Enable Primary Torus</label>
+      </div>
+      <div class="control-group">
+        <label><input type="checkbox" id="primaryWireframe" checked> Show Primary Wireframe</label>
+      </div>
+      <div class="control-group">
+        <label><input type="checkbox" id="primaryParticles" checked> Show Primary Particles</label>
+      </div>
+      <div class="control-group">
+        <label>Wireframe Opacity: <span id="primaryWireframeOpacityDisplay">0.30</span></label>
+        <input type="range" id="primaryWireframeOpacitySlider" min="0" max="1" value="0.30" step="0.01">
+      </div>
+      <div class="control-group">
+        <label>Deformation: <span id="dDisplay">2.000</span></label>
+        <input type="range" id="dSlider" min="1" max="2" value="2.000" step="0.001">
+      </div>
+      <div class="control-group">
+        <label>Particles: <span id="particleDisplay">200</span></label>
+        <input type="range" id="particleSlider" min="1" max="500" value="200" step="1">
+      </div>
+      <div class="control-group">
+        <label>Particle Opacity: <span id="primaryOpacityDisplay">1.00</span></label>
+        <input type="range" id="primaryOpacitySlider" min="0" max="1" value="1.00" step="0.01">
+      </div>
+      <div class="control-group">
+        <label>Curves: <span id="primaryLissajousDisplay">50</span></label>
+        <input type="range" id="primaryLissajousSlider" min="1" max="50" value="50" step="1">
+      </div>
+      <div class="control-group">
+        <label>Particle Speed: <span id="primarySpeedDisplay">0.0022</span></label>
+        <input type="range" id="primarySpeedSlider" min="0.0001" max="0.02" value="0.0022" step="0.0001">
+      </div>
+    </div>
+  </div>
+
+  <div class="torus-section">
+    <h3>Secondary Torus</h3>
+    <div class="section-content">
+      <div class="control-group">
+        <label><input type="checkbox" id="secondaryTorus" checked> Enable Secondary Torus</label>
+      </div>
+      <div class="control-group">
+        <label><input type="checkbox" id="secondaryWireframe" checked> Show Secondary Wireframe</label>
+      </div>
+      <div class="control-group">
+        <label><input type="checkbox" id="secondaryParticles" checked> Show Secondary Particles</label>
+      </div>
+      <div class="control-group">
+        <label>Wireframe Opacity: <span id="secondaryWireframeOpacityDisplay">0.30</span></label>
+        <input type="range" id="secondaryWireframeOpacitySlider" min="0" max="1" value="0.30" step="0.01">
+      </div>
+      <div class="control-group">
+        <label>Deformation: <span id="dSecondaryDisplay">3.200</span></label>
+        <input type="range" id="dSecondarySlider" min="1" max="4" value="3.200" step="0.001">
+      </div>
+      <div class="control-group">
+        <label>Particles: <span id="secondaryParticleDisplay">200</span></label>
+        <input type="range" id="secondaryParticleSlider" min="1" max="1000" value="200" step="1">
+      </div>
+      <div class="control-group">
+        <label>Particle Opacity: <span id="secondaryOpacityDisplay">1.00</span></label>
+        <input type="range" id="secondaryOpacitySlider" min="0" max="1" value="1.00" step="0.01">
+      </div>
+      <div class="control-group">
+        <label>Curves: <span id="secondaryLissajousDisplay">50</span></label>
+        <input type="range" id="secondaryLissajousSlider" min="1" max="50" value="50" step="1">
+      </div>
+      <div class="control-group">
+        <label>Particle Speed: <span id="secondarySpeedDisplay">-0.0022</span></label>
+        <input type="range" id="secondarySpeedSlider" min="-0.02" max="-0.0001" value="-0.0022" step="0.0001">
+      </div>
+    </div>
+  </div>
+
+  <div class="torus-section">
+    <h3>Global Controls</h3>
+    <div class="section-content">
+      <div class="control-group">
+        <label>Visualization Theme:</label>
+        <select id="themeSelect" class="theme-select">
+          <option value="radial_rainbow">Radial Rainbow Flow</option>
+          <option value="spiral_rainbow">Spiral Rainbow</option>
+          <option value="wave_rainbow">Wave Rainbow</option>
+          <option value="pulse_rainbow" selected>Pulsing Rainbow</option>
+          <option value="vortex_rainbow">Vortex Rainbow</option>
+          <option value="kaleidoscope">Kaleidoscope Flow</option>
+          <option value="aurora">Aurora Waves</option>
+        </select>
+      </div>
+      <div class="keyboard-controls">
+        Use Arrow Keys to Rotate:<br>
+        ← → : Rotate Y axis<br>
+        ↑ ↓ : Rotate X axis
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const scene = new THREE.Scene();
+let primaryTorusObject = null;
+let secondaryTorus = null;
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ 
+    antialias: true,
+    alpha: true,
+    preserveDrawingBuffer: true,
+    powerPreference: "high-performance"
+});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+let D = 2.000;
+let D_SECONDARY = 3.200; 
+const R = 2;
+const segments = 100; 
+let isMouseDown = false;
+let mouseX = 0;
+let mouseY = 0;
+let autoRotate = true;
+
+let particles = [];
+const PHI = (1 + Math.sqrt(5)) / 2;
+
+let lissajousCurves = 50;
+let secondaryLissajousCurves = 50;
+let primaryParticleOpacity = 1.00;
+let secondaryParticleOpacity = 1.00;
+
+let colorHue = 0;
+let primaryParticleCount = 200;
+let secondaryParticleCount = 200;
+
+let secondaryParticles = [];
+const PHI_SECONDARY = 1.618;
+
+let primaryParticleSpeed = 0.0022;
+let secondaryParticleSpeed = -0.0022;
+
+const themeColors = {
+  radial_rainbow: {
+    particleSpeed: [0.0022, -0.0022],
+    particleOpacity: [1.0, 1.0],
+    wireframeOpacity: [0.30, 0.30],
+    colorEffect: 'radial'
+  },
+  spiral_rainbow: {
+    particleSpeed: [0.0022, -0.0022],
+    particleOpacity: [1.0, 1.0],
+    wireframeOpacity: [0.30, 0.30],
+    colorEffect: 'spiral'
+  },
+  wave_rainbow: {
+    particleSpeed: [0.0022, -0.0022],
+    particleOpacity: [1.0, 1.0],
+    wireframeOpacity: [0.30, 0.30],
+    colorEffect: 'wave'
+  },
+  pulse_rainbow: {
+    particleSpeed: [0.0022, -0.0022],
+    particleOpacity: [1.0, 1.0],
+    wireframeOpacity: [0.30, 0.30],
+    colorEffect: 'pulse'
+  },
+  vortex_rainbow: {
+    particleSpeed: [0.0022, -0.0022],
+    particleOpacity: [1.0, 1.0],
+    wireframeOpacity: [0.30, 0.30],
+    colorEffect: 'vortex'
+  },
+  kaleidoscope: {
+    particleSpeed: [0.0022, -0.0022],
+    particleOpacity: [1.0, 1.0],
+    wireframeOpacity: [0.30, 0.30],
+    colorEffect: 'kaleidoscope'
+  },
+  aurora: {
+    particleSpeed: [0.0022, -0.0022],
+    particleOpacity: [1.0, 1.0],
+    wireframeOpacity: [0.30, 0.30],
+    colorEffect: 'aurora'
+  }
+};
+
+function applyTheme(themeName) {
+    const theme = themeColors[themeName] || themeColors['pulse_rainbow'];
+    
+    colorEffect = theme.colorEffect || 'pulse';
+    primaryParticleSpeed = theme.particleSpeed?.[0] || 0.0022;
+    secondaryParticleSpeed = theme.particleSpeed?.[1] || -0.0022;
+    
+    updateAllDisplays();
+    
+    if (document.getElementById('primaryTorus')?.checked) {
+        updateParticles(primaryParticleCount);
+    }
+    if (document.getElementById('secondaryTorus')?.checked) {
+        updateSecondaryParticles(secondaryParticleCount);
+    }
+}
+
+document.getElementById('themeSelect').addEventListener('change', (e) => {
+  applyTheme(e.target.value);
+});
+
+function updateAllDisplays() {
+  document.getElementById('primarySpeedDisplay').textContent = primaryParticleSpeed.toFixed(4);
+  document.getElementById('secondarySpeedDisplay').textContent = secondaryParticleSpeed.toFixed(4);
+  document.getElementById('primaryOpacityDisplay').textContent = primaryParticleOpacity.toFixed(2);
+  document.getElementById('secondaryOpacityDisplay').textContent = secondaryParticleOpacity.toFixed(2);
+  document.getElementById('primaryWireframeOpacityDisplay').textContent = primaryWireframeOpacity.toFixed(2);
+  document.getElementById('secondaryWireframeOpacityDisplay').textContent = secondaryWireframeOpacity.toFixed(2);
+  
+  updateParticles(primaryParticleCount);
+  updateSecondaryParticles(secondaryParticleCount);
+  if (primaryTorusObject) createTorusField();
+  if (secondaryTorus) createSecondaryTorusField();
+}
+let primaryWireframeOpacity = 0.30;
+let secondaryWireframeOpacity = 0.30;
+
+function createParticle() {
+    const geometry = new THREE.SphereGeometry(0.02, 8, 8);
+    const material = new THREE.MeshPhongMaterial({
+        color: 0xaaaaaa,
+        emissive: 0x444444,
+        transparent: true,
+        opacity: primaryParticleOpacity * 0.7,
+        shininess: 0
+    });
+    const particle = new THREE.Mesh(geometry, material);
+    particle.progress = Math.random(); 
+    particle.speed = primaryParticleSpeed;
+    particle.offset = Math.random() * 2 * Math.PI;
+    particle.curve = (Math.random() * lissajousCurves * 2) - lissajousCurves;
+    particle.turbulence = {
+        x: Math.random() * 0.1 - 0.05,
+        y: Math.random() * 0.1 - 0.05,
+        z: Math.random() * 0.1 - 0.05
+    };
+    return particle;
+}
+
+function updateParticles(count) {
+    particles.forEach(particle => scene.remove(particle));
+    particles = [];
+    
+    for (let i = 0; i < count; i++) {
+        const particle = createParticle();
+        particles.push(particle);
+        scene.add(particle);
+    }
+}
+
+function createTorusField() {
+    if (primaryTorusObject) scene.remove(primaryTorusObject);
+    
+    const geometry = new THREE.ParametricBufferGeometry((u, v, target) => {
+        const theta = u * 2 * Math.PI;
+        const phi = v * 2 * Math.PI;
+        
+        const x = (R + D * Math.cos(theta)) * Math.cos(phi);
+        const y = (R + D * Math.cos(theta)) * Math.sin(phi);
+        const z = D * Math.sin(theta);
+        
+        target.set(x, y, z);
+    }, segments, segments);
+
+    const material = new THREE.MeshPhongMaterial({
+        vertexColors: true,
+        wireframe: true,
+        transparent: true,
+        opacity: primaryWireframeOpacity,
+        shininess: 100,
+        wireframeLinewidth: 2
+    });
+
+    primaryTorusObject = new THREE.Mesh(geometry, material);
+    scene.add(primaryTorusObject);
+}
+
+function createSecondaryTorusField() {
+    if (secondaryTorus) scene.remove(secondaryTorus);
+    
+    const geometry = new THREE.ParametricBufferGeometry((u, v, target) => {
+        const theta = u * 2 * Math.PI;
+        const phi = v * 2 * Math.PI;
+        
+        const x = (R * PHI_SECONDARY + D_SECONDARY * Math.cos(theta)) * Math.cos(phi);
+        const y = (R * PHI_SECONDARY + D_SECONDARY * Math.cos(theta)) * Math.sin(phi);
+        const z = D_SECONDARY * Math.sin(theta);
+        
+        target.set(x, y, z);
+    }, segments, segments);
+
+    const material = new THREE.MeshPhongMaterial({
+        vertexColors: true,
+        wireframe: true,
+        transparent: true,
+        opacity: secondaryWireframeOpacity,
+        shininess: 100,
+        wireframeLinewidth: 2
+    });
+
+    secondaryTorus = new THREE.Mesh(geometry, material);
+    scene.add(secondaryTorus);
+}
+
+const light = new THREE.PointLight(0xffffff, 2.0, 100);
+light.position.set(10, 10, 10);
+light.castShadow = true;
+scene.add(light);
+
+const backLight = new THREE.PointLight(0xffffff, 1.0, 100);
+backLight.position.set(-10, -10, -10);
+scene.add(backLight);
+
+const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+scene.add(ambientLight);
+
+camera.position.z = 10;
+
+function updateParticlePosition(particle) {
+    particle.progress += particle.speed;
+    if (particle.progress > 1) particle.progress = 0;
+
+    const curveOffset = (particle.curve / lissajousCurves) * Math.PI;
+    const theta = (particle.progress * 2 * Math.PI + particle.offset + curveOffset) % (2 * Math.PI);
+    const phi = (particle.progress * 4 * Math.PI * PHI + particle.offset) % (2 * Math.PI);
+    
+    const turbulence = 0.1;
+    const time = Date.now() * 0.001;
+    
+    const x = (R + D * Math.cos(theta)) * Math.cos(phi) + Math.sin(time + particle.offset) * turbulence;
+    const y = (R + D * Math.cos(theta)) * Math.sin(phi) + Math.cos(time * 1.3 + particle.offset) * turbulence;
+    const z = D * Math.sin(theta) + Math.sin(time * 0.7 + particle.offset) * turbulence;
+    
+    particle.position.set(
+        x + particle.turbulence.x * Math.sin(time * 2),
+        y + particle.turbulence.y * Math.cos(time * 2),
+        z + particle.turbulence.z * Math.sin(time * 1.5)
+    );
+
+    const fadeScale = (Math.sin(particle.progress * Math.PI) * 0.7 + 0.3);
+    particle.material.opacity = primaryParticleOpacity * fadeScale * 0.7;
+    particle.scale.setScalar(0.8 + Math.sin(time + particle.offset) * 0.2);
+}
+
+function createSecondaryParticle() {
+    const geometry = new THREE.SphereGeometry(0.02, 8, 8);
+    const material = new THREE.MeshPhongMaterial({
+        color: 0xaaaaaa,
+        emissive: 0x444444,
+        transparent: true,
+        opacity: secondaryParticleOpacity * 0.7,
+        shininess: 0
+    });
+    const particle = new THREE.Mesh(geometry, material);
+    particle.progress = Math.random();
+    particle.speed = secondaryParticleSpeed; 
+    particle.offset = Math.random() * 2 * Math.PI;
+    particle.curve = (Math.random() * secondaryLissajousCurves * 2) - secondaryLissajousCurves;
+    particle.turbulence = {
+        x: Math.random() * 0.1 - 0.05,
+        y: Math.random() * 0.1 - 0.05,
+        z: Math.random() * 0.1 - 0.05
+    };
+    return particle;
+}
+
+function updateSecondaryParticles(count) {
+    secondaryParticles.forEach(particle => scene.remove(particle));
+    secondaryParticles = [];
+    
+    for (let i = 0; i < count; i++) {
+        const particle = createSecondaryParticle();
+        secondaryParticles.push(particle);
+        scene.add(particle);
+    }
+}
+
+function updateSecondaryParticlePosition(particle) {
+    particle.progress += particle.speed;
+    if (particle.progress < 0) particle.progress = 1;
+
+    const curveOffset = (particle.curve / secondaryLissajousCurves) * Math.PI;
+    const theta = (particle.progress * 2 * Math.PI + particle.offset + curveOffset) % (2 * Math.PI);
+    const phi = (particle.progress * 4 * Math.PI * PHI + particle.offset) % (2 * Math.PI);
+    
+    const turbulence = 0.1;
+    const time = Date.now() * 0.001;
+    
+    const x = (R * PHI_SECONDARY + D_SECONDARY * Math.cos(theta)) * Math.cos(phi) + Math.sin(time + particle.offset) * turbulence;
+    const y = (R * PHI_SECONDARY + D_SECONDARY * Math.cos(theta)) * Math.sin(phi) + Math.cos(time * 1.3 + particle.offset) * turbulence;
+    const z = D_SECONDARY * Math.sin(theta) + Math.sin(time * 0.7 + particle.offset) * turbulence;
+    
+    particle.position.set(
+        x + particle.turbulence.x * Math.sin(time * 2),
+        y + particle.turbulence.y * Math.cos(time * 2),
+        z + particle.turbulence.z * Math.sin(time * 1.5)
+    );
+
+    const fadeScale = (Math.sin(particle.progress * Math.PI) * 0.7 + 0.3);
+    particle.material.opacity = secondaryParticleOpacity * fadeScale * 0.7;
+    particle.scale.setScalar(0.8 + Math.sin(time + particle.offset) * 0.2);
+}
+
+let keyState = {
+    ArrowLeft: false,
+    ArrowRight: false,
+    ArrowUp: false,
+    ArrowDown: false
+};
+
+document.addEventListener('keydown', (e) => {
+    if (keyState.hasOwnProperty(e.key)) {
+        keyState[e.key] = true;
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    if (keyState.hasOwnProperty(e.key)) {
+        keyState[e.key] = false;
+    }
+});
+
+function updateKeyboardControls() {
+    if (keyState.ArrowLeft) scene.rotation.y -= 0.02;
+    if (keyState.ArrowRight) scene.rotation.y += 0.02;
+    if (keyState.ArrowUp) scene.rotation.x -= 0.02;
+    if (keyState.ArrowDown) scene.rotation.x += 0.02;
+}
+
+let colorEffect = 'radial'; 
+applyTheme('pulse_rainbow'); 
+
+function updateTorusColors() {
+    if (!primaryTorusObject?.geometry || !secondaryTorus?.geometry) return;
+    
+    colorHue = (colorHue + 0.001) % 1;
+
+    try {
+        const updateColors = (geometry, offset = 0) => {
+            const positions = geometry.getAttribute('position').array;
+            const colors = new Float32Array(positions.length);
+            
+            for (let i = 0; i < positions.length; i += 3) {
+                const color = new THREE.Color().setHSL(
+                    0,
+                    0.1,
+                    0.3 + Math.random() * 0.2
+                );
+                colors[i] = color.r;
+                colors[i + 1] = color.g;
+                colors[i + 2] = color.b;
+            }
+            
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        };
+
+        updateColors(primaryTorusObject.geometry);
+        updateColors(secondaryTorus.geometry, 0.5);
+    } catch (error) {
+        console.error('Error updating colors:', error);
+    }
+}
+
+const composer = new THREE.EffectComposer(renderer);
+const renderPass = new THREE.RenderPass(scene, camera);
+const bloomPass = new THREE.UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    0.8,
+    1,
+    0.3
+);
+composer.addPass(renderPass);
+composer.addPass(bloomPass);
+
+function animate() {
+    requestAnimationFrame(animate);
+    
+    particles.forEach(updateParticlePosition);
+    secondaryParticles.forEach(updateSecondaryParticlePosition);
+    updateTorusColors();
+    updateKeyboardControls();
+    
+    composer.render();
+}
+
+const dSlider = document.getElementById('dSlider');
+const dDisplay = document.getElementById('dDisplay');
+const particleSlider = document.getElementById('particleSlider');
+const particleDisplay = document.getElementById('particleDisplay');
+const dSecondarySlider = document.getElementById('dSecondarySlider');
+const dSecondaryDisplay = document.getElementById('dSecondaryDisplay');
+const primaryTorusCheckbox = document.getElementById('primaryTorus');
+
+dSecondarySlider.addEventListener('input', (e) => {
+    D_SECONDARY = parseFloat(e.target.value);
+    dSecondaryDisplay.textContent = D_SECONDARY.toFixed(3);
+    if (secondaryTorus) createSecondaryTorusField();
+});
+
+const primaryOpacitySlider = document.getElementById('primaryOpacitySlider');
+const primaryOpacityDisplay = document.getElementById('primaryOpacityDisplay');
+primaryOpacitySlider.addEventListener('input', (e) => {
+    primaryParticleOpacity = parseFloat(e.target.value);
+    primaryOpacityDisplay.textContent = primaryParticleOpacity.toFixed(2);
+    particles.forEach(p => p.material.opacity = primaryParticleOpacity * 0.7);
+});
+
+const secondaryOpacitySlider = document.getElementById('secondaryOpacitySlider');
+const secondaryOpacityDisplay = document.getElementById('secondaryOpacityDisplay');
+secondaryOpacitySlider.addEventListener('input', (e) => {
+    secondaryParticleOpacity = parseFloat(e.target.value);
+    secondaryOpacityDisplay.textContent = secondaryParticleOpacity.toFixed(2);
+    secondaryParticles.forEach(p => p.material.opacity = secondaryParticleOpacity * 0.7);
+});
+
+particleSlider.addEventListener('input', (e) => {
+    primaryParticleCount = parseInt(e.target.value);
+    particleDisplay.textContent = primaryParticleCount;
+    updateParticles(primaryParticleCount);
+    if (document.getElementById('primaryTorus').checked) {
+        updateSecondaryParticles(secondaryParticleCount);
+    }
+});
+
+document.getElementById('secondaryParticleSlider').addEventListener('input', (e) => {
+    secondaryParticleCount = parseInt(e.target.value);
+    document.getElementById('secondaryParticleDisplay').textContent = secondaryParticleCount;
+    if (document.getElementById('secondaryTorus').checked) {
+        updateSecondaryParticles(secondaryParticleCount);
+    }
+});
+
+document.getElementById('primaryLissajousSlider').addEventListener('input', (e) => {
+    lissajousCurves = parseInt(e.target.value);
+    document.getElementById('primaryLissajousDisplay').textContent = lissajousCurves;
+    updateParticles(primaryParticleCount);
+});
+
+document.getElementById('secondaryLissajousSlider').addEventListener('input', (e) => {
+    secondaryLissajousCurves = parseInt(e.target.value);
+    document.getElementById('secondaryLissajousDisplay').textContent = secondaryLissajousCurves;
+    if (document.getElementById('secondaryTorus').checked) {
+        updateSecondaryParticles(secondaryParticleCount);
+    }
+});
+
+primaryTorusCheckbox.addEventListener('change', (e) => {
+    if (e.target.checked) {
+        createTorusField();
+        if (document.getElementById('primaryParticles').checked) {
+            updateParticles(primaryParticleCount);
+        }
+    } else {
+        if (primaryTorusObject) scene.remove(primaryTorusObject);
+        particles.forEach(particle => scene.remove(particle));
+        particles = [];
+    }
+});
+
+const secondaryTorusCheckbox = document.getElementById('secondaryTorus');
+secondaryTorusCheckbox.addEventListener('change', (e) => {
+    if (e.target.checked) {
+        createSecondaryTorusField();
+        if (document.getElementById('secondaryParticles').checked) {
+            updateSecondaryParticles(secondaryParticleCount);
+        }
+    } else {
+        if (secondaryTorus) scene.remove(secondaryTorus);
+        secondaryParticles.forEach(particle => scene.remove(particle));
+        secondaryParticles = [];
+    }
+});
+
+document.getElementById('primaryWireframe').addEventListener('change', (e) => {
+    if (primaryTorusObject) {
+        primaryTorusObject.visible = e.target.checked;
+    }
+});
+
+document.getElementById('primaryParticles').addEventListener('change', (e) => {
+    particles.forEach(particle => particle.visible = e.target.checked);
+});
+
+document.getElementById('secondaryWireframe').addEventListener('change', (e) => {
+    if (secondaryTorus) {
+        secondaryTorus.visible = e.target.checked;
+    }
+});
+
+document.getElementById('secondaryParticles').addEventListener('change', (e) => {
+    secondaryParticles.forEach(particle => particle.visible = e.target.checked);
+});
+
+renderer.domElement.addEventListener('mousedown', (e) => {
+    isMouseDown = true;
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+
+renderer.domElement.addEventListener('mousemove', (e) => {
+    if (isMouseDown && !autoRotate) {
+        const deltaX = e.clientX - mouseX;
+        const deltaY = e.clientY - mouseY;
+        scene.rotation.y += deltaX * 0.005;
+        scene.rotation.x += deltaY * 0.005;
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    }
+});
+
+renderer.domElement.addEventListener('mouseup', () => {
+    isMouseDown = false;
+});
+
+renderer.domElement.addEventListener('mouseleave', () => {
+    isMouseDown = false;
+});
+
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height);
+        composer.setSize(width, height);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+    }, 250);
+});
+
+init();
+
+function init() {
+    createTorusField();
+    createSecondaryTorusField();
+    updateParticles(primaryParticleCount);
+    updateSecondaryParticles(secondaryParticleCount);
+}
+
+document.getElementById('primarySpeedSlider').addEventListener('input', (e) => {
+    primaryParticleSpeed = parseFloat(e.target.value);
+    document.getElementById('primarySpeedDisplay').textContent = primaryParticleSpeed.toFixed(4);
+    particles.forEach(p => p.speed = primaryParticleSpeed);
+});
+
+document.getElementById('secondarySpeedSlider').addEventListener('input', (e) => {
+    secondaryParticleSpeed = parseFloat(e.target.value);
+    document.getElementById('secondarySpeedDisplay').textContent = secondaryParticleSpeed.toFixed(4);
+    secondaryParticles.forEach(p => p.speed = secondaryParticleSpeed);
+});
+
+document.getElementById('primaryWireframeOpacitySlider').addEventListener('input', (e) => {
+    primaryWireframeOpacity = parseFloat(e.target.value);
+    document.getElementById('primaryWireframeOpacityDisplay').textContent = primaryWireframeOpacity.toFixed(2);
+    if (primaryTorusObject) {
+        primaryTorusObject.material.opacity = primaryWireframeOpacity;
+    }
+});
+
+document.getElementById('secondaryWireframeOpacitySlider').addEventListener('input', (e) => {
+    secondaryWireframeOpacity = parseFloat(e.target.value);
+    document.getElementById('secondaryWireframeOpacityDisplay').textContent = secondaryWireframeOpacity.toFixed(2);
+    if (secondaryTorus) {
+        secondaryTorus.material.opacity = secondaryWireframeOpacity;
+    }
+});
+
+// Add cleanup function
+function cleanup() {
+    particles.forEach(particle => scene.remove(particle));
+    secondaryParticles.forEach(particle => scene.remove(particle));
+    if (primaryTorusObject) scene.remove(primaryTorusObject);
+    if (secondaryTorus) scene.remove(secondaryTorus);
+    renderer.dispose();
+    composer.dispose();
+}
+
+// Add collapsible functionality
+document.querySelectorAll('.torus-section h3').forEach(header => {
+  header.addEventListener('click', () => {
+    const section = header.parentElement;
+    section.classList.toggle('collapsed');
+  });
+});
+
+animate();
+</script>
+</body></html>
